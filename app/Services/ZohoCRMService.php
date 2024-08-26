@@ -148,4 +148,160 @@ class ZohoCRMService
             ];
         }
     }
+
+
+    
+    /**
+     * @return array
+     */
+    private function headersUpload()
+    {
+        return [
+            'Accept' => 'application/json',
+            'Authorization' => 'Zoho-oauthtoken ' . $this->zohoOAuthService->getAccessToken()->access_token,
+            'X-CRM-ORG' => '664991997',
+            'feature' => 'bulk-write'
+
+        ];
+    }
+
+    /**
+     * Upload File CRM
+     *
+     * @param $module
+     * @param $criteria
+     * @return array
+     */
+    public function uploadFileCrm()
+    {
+        $url = $this->urlApi("/upload");
+        $url = 'https://content.zohoapis.com/crm/v6/upload';
+        $header_crm = $this->headersUpload();
+        $header = $this->headers();
+        $client = new Client();
+
+        $fileName = 'tiny.zip';
+        $relativeFilePath = 'public/touploadcrm/' . $fileName; // Ruta relativa dentro de storage/app/public/
+        $absoluteFilePath = storage_path('app/' . $relativeFilePath); // Ruta absoluta para acceder al archivo      
+
+        $fields["file"] = fopen($absoluteFilePath, 'rb');
+
+        try {
+            $response = $client->request('POST', $url, [
+                'headers' => $header_crm,
+                'multipart' => [
+                    [
+                        'name'     => 'file',
+                        'contents' => fopen($absoluteFilePath, 'r'),
+                        'filename' => $fileName,
+                    ],
+                ],
+            ]);
+
+                $responseBody = $response->getBody()->getContents();
+                $responseData = json_decode($responseBody, true);
+                if (isset($responseData['code']) && $responseData['code'] === 'FILE_UPLOAD_SUCCESS') {
+                    $fileId = $responseData['details']['file_id'];
+                    echo "File ID: " . $fileId;
+                } else {
+                    echo "File upload failed.";
+                }
+
+            //Now Insert Data Bulk
+            $zohoApiUrl = 'https://www.zohoapis.com/crm/v6/bulk-write';
+            $moduleAPIName = 'Products'; 
+          /*  $jobData = [
+                'operation'  => 'insert',
+                "callback": {
+                    "url": "http://requestbin.fullcontact.com/1fcimk51",
+                    "method": "post"
+                },
+                'ignore_empty' => true,
+                'resource' => [
+                    [
+                        'type' => 'data',
+                        'module' => $moduleAPIName,
+                        'file' => [
+                            'file_id' => $fileId,
+                        ],
+                        'field_mappings' => [
+                            [
+                                'api_name' => 'Product_Name',
+                                'index' => 1,
+                            ],
+                            [
+                                'api_name' => 'Product_Category',
+                                'index' => 2,
+                            ],
+                            [
+                                'api_name' => 'Type',
+                                'index' => 3,
+                            ],
+                        ],
+                    ],
+                ],
+            ];*/
+
+
+            $jobData = '{
+                "operation": "insert",
+                "ignore_empty": true,
+                "callBack": {
+                    "url": "http://requestbin.fullcontact.com/1bvgfh61",
+                    "method": "post"
+                },
+                "resource": [
+                    {
+                        "type": "data",
+                        "module": {
+                            "api_name": "Products"
+                        },
+                        "find_by": "id",
+                        "file_id": $fileId,
+                        "field_mappings": [
+                            {
+                            "api_name": "Layout",
+                            "default_value": {
+                                "value": "5033280000006201250" 
+                            }
+                        },
+                        {
+                            "api_name": "Product_Name",
+                            "index": 1
+                        },
+                        {
+                            "api_name": "Product_Category",
+                            "index": 2
+                        },
+                        {
+                            "api_name": "Type",
+                            "index": 3
+                        }
+                    ]
+                }
+            ]
+            }';
+
+            $responseInsert = $client->request('POST', $zohoApiUrl, [
+                'headers' => $header,
+                'body' => $jobData
+            ]);
+
+
+            $responseBodyInsert = $responseInsert->getBody()->getContents();
+            dd($responseInsert);
+
+            
+        } catch (\Exception $e) {
+            // Handle exception            
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
+
+        
+    }
+
+
+
+
+
 }

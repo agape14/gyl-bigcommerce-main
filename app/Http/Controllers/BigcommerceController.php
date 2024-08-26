@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Services\ZohoOAuthService;
+use App\Services\ZohoCRMService;
 use App\Services\ZohoWorkdriveService;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Artisan;
@@ -15,6 +16,14 @@ use Maatwebsite\Excel\Facades\Excel;
 
 class BigcommerceController extends Controller
 {
+
+
+        
+    public function createProductInCrm(Request $request)
+    {
+        $serviceCRM = new ZohoCRMService();       
+        $record = $serviceCRM->uploadFileCrm();
+    }
 
 /**
      * @OA\Get(
@@ -117,13 +126,13 @@ class BigcommerceController extends Controller
             $fileSavePath = storage_path('app/public/input_file/');
             $serviceWorkdrive = new ZohoWorkdriveService();
             $response = $serviceWorkdrive->downloadFile($fileName, env('ZOHO_WORKDRIVE_FOLDER_OUTPUT_CSV'), $fileSavePath);
-            //var_dump( $response);return;
+
             // Validar si la descarga fue exitosa
             if ($response['status']) {
                 // Leer y procesar el archivo CSV si la descarga fue exitosa
                 $csvFilePath = $response['file_path'];
                 $data = $this->readCsv($fileName);
-                //var_dump( $data);
+
                 // Insertar los datos en Zoho CRM
                 $serviceWorkdrive->insertDataIntoZohoCRM($data);
 

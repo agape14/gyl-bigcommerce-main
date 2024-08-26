@@ -11,7 +11,7 @@ Route::get('/process-excel', [BigcommerceController::class, 'processExcelCsv']);
 Route::post('/processbigcommerce', [BigcommerceController::class, 'processBigcommerce']);
 
 Route::get('/downloadFileCsv', [BigcommerceController::class, 'downloadFileCsv']);
-
+Route::get('/createProducts', [BigcommerceController::class, 'createProductInCrm']);
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });

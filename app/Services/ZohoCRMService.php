@@ -202,94 +202,56 @@ class ZohoCRMService
                 $responseData = json_decode($responseBody, true);
                 if (isset($responseData['code']) && $responseData['code'] === 'FILE_UPLOAD_SUCCESS') {
                     $fileId = $responseData['details']['file_id'];
-                    echo "File ID: " . $fileId;
+                   // echo "File ID: " . $fileId;
                 } else {
                     echo "File upload failed.";
                 }
 
-            //Now Insert Data Bulk
-            $zohoApiUrl = 'https://www.zohoapis.com/crm/v6/bulk-write';
-            $moduleAPIName = 'Products'; 
-          /*  $jobData = [
-                'operation'  => 'insert',
-                "callback": {
-                    "url": "http://requestbin.fullcontact.com/1fcimk51",
-                    "method": "post"
-                },
-                'ignore_empty' => true,
-                'resource' => [
-                    [
-                        'type' => 'data',
-                        'module' => $moduleAPIName,
-                        'file' => [
-                            'file_id' => $fileId,
-                        ],
-                        'field_mappings' => [
-                            [
-                                'api_name' => 'Product_Name',
-                                'index' => 1,
-                            ],
-                            [
-                                'api_name' => 'Product_Category',
-                                'index' => 2,
-                            ],
-                            [
-                                'api_name' => 'Type',
-                                'index' => 3,
-                            ],
-                        ],
+
+                $zohoApiUrl = 'https://www.zohoapis.com/crm/v6/write';
+                $moduleAPIName = 'Products'; 
+                $jobData = [
+                    "operation" => "insert",
+                    "ignore_empty" => true,
+                    "callBack" => [
+                        "url" => "https://webhook.site/e47c1a07-9912-4a41-9901-7fc66b37ec2d",
+                        "method" => "post"
                     ],
-                ],
-            ];*/
-
-
-            $jobData = '{
-                "operation": "insert",
-                "ignore_empty": true,
-                "callBack": {
-                    "url": "http://requestbin.fullcontact.com/1bvgfh61",
-                    "method": "post"
-                },
-                "resource": [
-                    {
-                        "type": "data",
-                        "module": {
-                            "api_name": "Products"
-                        },
-                        "find_by": "id",
-                        "file_id": $fileId,
-                        "field_mappings": [
-                            {
-                            "api_name": "Layout",
-                            "default_value": {
-                                "value": "5033280000006201250" 
-                            }
-                        },
-                        {
-                            "api_name": "Product_Name",
-                            "index": 1
-                        },
-                        {
-                            "api_name": "Product_Category",
-                            "index": 2
-                        },
-                        {
-                            "api_name": "Type",
-                            "index": 3
-                        }
+                    "resource" => [
+                        [
+                            "type" => "data",
+                            "module" => [
+                                "api_name" => "Products"
+                            ],
+                            "file_id" => $fileId,
+                            "file_names" => [
+                                "tiny.csv"
+                            ],
+                            "field_mappings" => [
+                                [
+                                    "api_name" => "Product_Name",
+                                    "index" => 1
+                                ],
+                                [
+                                    "api_name" => "Product_Category",
+                                    "index" => 2
+                                ]
+                            ]
+                        ]
                     ]
+                ];
+                
+                $responseInsert = $client->request('POST', $zohoApiUrl, [
+                    'headers' => $header,
+                    'json' => $jobData
+                ]);
+                if (isset($responseContent['errors'])) {
+                    echo "Errors: " . print_r($responseContent['errors'], true);
+                } elseif (isset($responseContent['status']) && $responseContent['status'] != "success") {
+                    echo "Request failed with message: " . $responseContent['message'];
                 }
-            ]
-            }';
-
-            $responseInsert = $client->request('POST', $zohoApiUrl, [
-                'headers' => $header,
-                'body' => $jobData
-            ]);
-
-
-            $responseBodyInsert = $responseInsert->getBody()->getContents();
-            dd($responseInsert);
+            
+            //$responseBodyInsert = $responseInsert->getBody()->getContents();
 
             
         } catch (\Exception $e) {
